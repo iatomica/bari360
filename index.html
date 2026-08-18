@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visor 360° - Casita Bari</title>
+  
+  <!-- Preload Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Pannellum CSS CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
+  
+  <!-- Custom Premium Styles -->
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+  <!-- 360 Panorama Container -->
+  <div id="panorama-container">
+    <div id="panorama"></div>
+  </div>
+
+  <!-- Initial Interactive Map Hub Screen -->
+  <div id="hub-screen" class="hub-overlay">
+    
+    <!-- Map Background Layer with Pan & Zoom Wrapper -->
+    <div id="hub-map-viewport" class="hub-map-container">
+      <div id="hub-map-wrapper" class="hub-map-wrapper">
+        <img src="/mapa-bari.webp" alt="Mapa Bariloche" class="hub-map-img" />
+        
+        <!-- Dynamic pins are rendered by app.js from entriesStore -->
+      </div>
+    </div>
+
+    <!-- Floating Map Pan & Zoom Controls -->
+    <div id="map-controls" class="map-controls glass-card">
+      <button id="map-zoom-in" class="btn-map-ctrl" title="Acercar mapa (+)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+      </button>
+      <span id="map-zoom-level" class="zoom-indicator">100%</span>
+      <button id="map-zoom-out" class="btn-map-ctrl" title="Alejar mapa (-)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+      </button>
+      <div class="map-ctrl-divider"></div>
+      <button id="map-zoom-reset" class="btn-map-ctrl" title="Restablecer vista del mapa">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+          <path d="M3 3v5h5"></path>
+        </svg>
+      </button>
+      <div class="map-ctrl-divider"></div>
+      <!-- Orange Gear Button for Admin Authentication & Management -->
+      <button id="btn-admin-gear" class="btn-map-ctrl btn-gear-orange" title="Administración">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="gear-icon">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Single Floating "Nuevo Punto" Button (Admin Mode Only) -->
+    <button id="btn-add-poi-map" class="btn-add-poi-map glass-card hidden" title="Agregar nuevo punto en el mapa">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+      <span>Nuevo Punto</span>
+    </button>
+
+    <!-- Floating POI Position Editor Wheel Panel -->
+    <div id="poi-editor-panel" class="poi-editor-panel glass-card hidden">
+      <div class="poi-editor-header">
+        <span class="poi-editor-title">Editor de Coordenadas</span>
+        <button id="btn-close-poi-editor" class="btn-close-editor" title="Cerrar Editor">✕</button>
+      </div>
+
+      <div class="poi-editor-select">
+        <label for="poi-select">Punto Seleccionado:</label>
+        <select id="poi-select" class="poi-dropdown">
+        </select>
+      </div>
+      
+      <!-- Directional Control Wheel -->
+      <div class="poi-wheel-container">
+        <button class="wheel-btn wheel-up" data-dir="up" title="Mover Arriba (Top -)">▲</button>
+        <button class="wheel-btn wheel-left" data-dir="left" title="Mover Izquierda (Left -)">◄</button>
+        <div class="wheel-center">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M12 2v4M12 18v4M2 12h4M18 12h4"></path>
+          </svg>
+        </div>
+        <button class="wheel-btn wheel-right" data-dir="right" title="Mover Derecha (Left +)">►</button>
+        <button class="wheel-btn wheel-down" data-dir="down" title="Mover Abajo (Top +)">▼</button>
+      </div>
+
+      <div class="poi-step-selector">
+        <span class="step-label">Paso:</span>
+        <button class="btn-step active" data-step="0.1">0.1%</button>
+        <button class="btn-step" data-step="0.5">0.5%</button>
+        <button class="btn-step" data-step="1.0">1.0%</button>
+      </div>
+
+      <div class="poi-coords-display">
+        <div class="coord-box">Top: <strong id="poi-coord-top">50.0%</strong></div>
+        <div class="coord-box">Left: <strong id="poi-coord-left">50.0%</strong></div>
+      </div>
+
+      <button id="btn-copy-poi-coords" class="btn-copy-coords">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+        <span>Copiar Coordenadas</span>
+      </button>
+    </div>
+
+    <!-- Top Header Floating Glass Bar (Folded by Default) -->
+    <header class="hub-header glass-card">
+      <div class="hub-brand">
+        <div class="hub-logo" title="Barivision 360">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+            <line x1="8" y1="2" x2="8" y2="18"></line>
+            <line x1="16" y1="6" x2="16" y2="22"></line>
+          </svg>
+        </div>
+        <div class="hub-header-content">
+          <div class="hub-header-text">
+            <h2>BARIVISION 360</h2>
+            <span>Mapa Interactivo • Bariloche, Argentina</span>
+          </div>
+          <div id="admin-badge-container" class="admin-badge-container">
+            <button id="btn-admin-status" class="btn-admin-status" title="Acceso Administración">
+              <span id="admin-status-text">Acceso Admin</span>
+            </button>
+            <button id="btn-logout-header" class="btn-logout-header hidden" title="Cerrar Sesión Admin">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+              <span>Salir</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+  </div>
+
+  <!-- Admin Login Modal -->
+  <div id="modal-admin-login" class="modal-overlay hidden">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <div class="modal-icon-badge">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </div>
+          <div>
+            <h2>Acceso Admin</h2>
+            <span class="modal-subtitle">Modo Gestión Barivision 360</span>
+          </div>
+        </div>
+        <button id="btn-close-login" class="btn-close-modal" title="Cerrar ventana">✕</button>
+      </div>
+
+      <p class="modal-desc">Ingresa la contraseña de administrador para activar los controles de edición en vivo y gestión de puntos en el mapa.</p>
+
+      <form id="form-admin-login" class="login-form">
+        <div class="form-group">
+          <label for="input-admin-password">Contraseña de Administrador</label>
+          <div class="input-with-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 2l-2 2m-2-2l2 2M3 21l9-9m0 0l-2-2m2 2l2-2m-2 2l2 2"></path>
+              <circle cx="16.5" cy="7.5" r="4.5"></circle>
+            </svg>
+            <input type="password" id="input-admin-password" placeholder="Ingresa clave (def: admin)" required autofocus />
+          </div>
+        </div>
+
+        <div id="login-error-msg" class="login-error-msg hidden">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span>Contraseña incorrecta. Inténtalo nuevamente.</span>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" id="btn-cancel-login" class="btn-secondary">Cancelar</button>
+          <button type="submit" class="btn-primary">
+            <span>Iniciar Sesión</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Admin Drawer / Management Overlay Modal -->
+  <div id="admin-drawer" class="admin-drawer-overlay hidden">
+    <div class="admin-drawer-content glass-card">
+      <div class="drawer-header">
+        <div class="drawer-title-row">
+          <span class="drawer-badge">Admin Center</span>
+          <h2 id="drawer-heading">Gestionar Locación</h2>
+        </div>
+        <button id="btn-close-drawer" class="btn-close-modal">✕</button>
+      </div>
+
+      <form id="drawer-entry-form" class="drawer-form">
+        <input type="hidden" id="drawer-entry-id" />
+
+        <div class="drawer-grid">
+          <div class="drawer-col">
+            <div class="form-group">
+              <label for="drawer-title">Título de la Entrada *</label>
+              <input type="text" id="drawer-title" required placeholder="Ej: Cerro Catedral 360°" />
+            </div>
+
+            <div class="form-group">
+              <label for="drawer-subtitle">Subtítulo / Ubicación</label>
+              <input type="text" id="drawer-subtitle" placeholder="Ej: Bariloche • Centro de Esquí" />
+            </div>
+
+            <div class="form-group">
+              <label for="drawer-description">Descripción</label>
+              <textarea id="drawer-description" rows="3" placeholder="Detalles de la locación..."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="drawer-address">Dirección Puntual</label>
+              <input type="text" id="drawer-address" placeholder="Ej: Base Cerro Catedral" />
+            </div>
+
+            <div class="form-group">
+              <label for="drawer-gmaps">URL Google Maps</label>
+              <input type="url" id="drawer-gmaps" placeholder="https://maps.google.com/..." />
+            </div>
+          </div>
+
+          <div class="drawer-col">
+            <div class="form-group">
+              <label for="drawer-cover">Imagen de Portada (URL)</label>
+              <div class="input-with-button">
+                <input type="text" id="drawer-cover" placeholder="/casita-bari.webp" />
+                <button type="button" id="btn-open-cover-media" class="btn-secondary btn-media-browse" title="Abrir Biblioteca Multimedia">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                  </svg>
+                  <span>Biblioteca</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="coords-row">
+              <div class="coord-field">
+                <label for="drawer-pos-top">Posición Top (%)</label>
+                <input type="number" id="drawer-pos-top" step="0.1" value="50.0" min="0" max="100" />
+              </div>
+              <div class="coord-field">
+                <label for="drawer-pos-left">Posición Left (%)</label>
+                <input type="number" id="drawer-pos-left" step="0.1" value="50.0" min="0" max="100" />
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top:10px;">
+              <label for="drawer-ref-links">Enlaces de Referencia (Etiqueta | URL)</label>
+              <textarea id="drawer-ref-links" rows="2" placeholder="Folleto | https://...&#10;Web | https://..."></textarea>
+            </div>
+
+            <!-- Dynamic 360 Scenes List -->
+            <div class="drawer-scenes-box">
+              <div class="scenes-header">
+                <label>Escenas y Ángulos 360°</label>
+                <button type="button" id="drawer-add-scene" class="btn-small-accent">+ Escena</button>
+              </div>
+              <div id="drawer-scenes-list" class="drawer-scenes-list">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="drawer-actions">
+          <div class="actions-left">
+            <button type="button" id="drawer-btn-delete" class="btn-danger hidden">Eliminar</button>
+            <button type="button" id="drawer-btn-logout" class="btn-secondary btn-logout-drawer">Cerrar Sesión</button>
+          </div>
+          <div class="actions-right">
+            <button type="button" id="drawer-btn-cancel" class="btn-secondary">Cancelar</button>
+            <button type="submit" class="btn-primary">Guardar Cambios</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Floating Top Banner for Interactive Map Location Picker -->
+  <div id="map-picker-banner" class="map-picker-banner glass-card hidden">
+    <div class="picker-banner-content">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+        <circle cx="12" cy="10" r="3"></circle>
+      </svg>
+      <span id="picker-banner-text">Haz clic en cualquier lugar del mapa para fijar la ubicación del punto.</span>
+    </div>
+    <button id="btn-cancel-picker" class="btn-secondary btn-small-cancel">Cancelar</button>
+  </div>
+
+  <!-- WordPress-style Glassmorphism Media Library & WebP Processing Modal -->
+  <div id="modal-media-library" class="modal-overlay hidden">
+    <div class="media-library-card glass-card">
+      <div class="media-library-header">
+        <div class="media-header-left">
+          <div class="modal-icon-badge">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+          </div>
+          <div>
+            <h2>Control Multimedia & Optimización WebP</h2>
+            <span class="modal-subtitle">Procesamiento automático a formato WebP (Compresión dulce 82%)</span>
+          </div>
+        </div>
+        <button id="btn-close-media-library" class="btn-close-modal" title="Cerrar ventana">✕</button>
+      </div>
+
+      <div class="media-library-tabs">
+        <button type="button" id="tab-media-gallery" class="tab-btn active">Explorar Biblioteca</button>
+        <button type="button" id="tab-media-upload" class="tab-btn">Subir & Optimizar WebP</button>
+      </div>
+
+      <!-- Tab 1: Gallery -->
+      <div id="media-panel-gallery" class="media-tab-panel">
+        <div class="media-search-bar">
+          <input type="text" id="media-search-input" placeholder="Buscar imagen en biblioteca..." />
+        </div>
+        <div id="media-grid" class="media-grid">
+          <!-- Dynamically populated media items -->
+        </div>
+      </div>
+
+      <!-- Tab 2: Upload & WebP Processing -->
+      <div id="media-panel-upload" class="media-tab-panel hidden">
+        <div class="upload-dropzone" id="media-dropzone">
+          <div class="dropzone-icon">
+            <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+          </div>
+          <div class="dropzone-text">
+            <h3>Arrastra o selecciona tus imágenes aquí</h3>
+            <p>Soporta PNG, JPG, JPEG, WEBP. La imagen se <strong>convertirá a WebP (82% Calidad)</strong> automáticamente.</p>
+          </div>
+          <input type="file" id="media-file-input" accept="image/*" class="hidden" />
+        </div>
+
+        <!-- Processing & WebP Optimization Status Dashboard -->
+        <div id="webp-optimization-card" class="webp-optimization-card hidden">
+          <div class="webp-status-header">
+            <span class="webp-badge">Optimización WebP Completada</span>
+            <span id="webp-ratio-badge" class="ratio-badge">-0%</span>
+          </div>
+
+          <div class="webp-stats-grid">
+            <div class="stat-box">
+              <span class="stat-label">Tamaño Original</span>
+              <strong id="webp-orig-size">0 KB</strong>
+            </div>
+            <div class="stat-arrow">➔</div>
+            <div class="stat-box accent">
+              <span class="stat-label">WebP Optimizado</span>
+              <strong id="webp-opt-size">0 KB</strong>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">Resolución</span>
+              <strong id="webp-dimensions">0 x 0</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="upload-url-divider">
+          <span>o ingresa una URL de imagen directa</span>
+        </div>
+
+        <div class="form-group">
+          <div class="input-with-button">
+            <input type="url" id="media-custom-url-input" placeholder="https://ejemplo.com/mi-imagen-360.jpg" />
+            <button type="button" id="btn-use-custom-url" class="btn-secondary">Agregar URL</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="media-library-footer">
+        <span id="media-selected-info" class="media-selected-info">Ningún archivo seleccionado</span>
+        <div class="media-footer-actions">
+          <button type="button" id="btn-delete-selected-media" class="btn-danger hidden">Eliminar de Biblioteca</button>
+          <button type="button" id="btn-cancel-media" class="btn-secondary">Cancelar</button>
+          <button type="button" id="btn-confirm-media" class="btn-primary" disabled>Seleccionar e Insertar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  </div>
+
+  <!-- Loading Overlay (Visible during WebGL initialization) -->
+  <div id="loading-screen" class="loading-overlay hidden">
+    <div class="loader-content">
+      <div class="spinner"></div>
+      <h2>Inicializando Entorno 360°</h2>
+      <p>Cargando texturas de alta resolución...</p>
+    </div>
+  </div>
+
+  <!-- Clean Minimal HUD UI -->
+  <div class="hud-overlay">
+    
+    <!-- Top-Left Brand Logo & Desc Card -->
+    <div id="brand-card" class="glass-card brand-card autohide">
+      <div class="brand-logo-container">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="brand-icon">
+          <circle cx="12" cy="12" r="10"></circle>
+          <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h2 class="brand-title">Casita Bari</h2>
+        <p class="brand-desc">IAtomica HQ</p>
+      </div>
+    </div>
+
+    <!-- Bottom Control Center HUD -->
+    <footer id="controls-card" class="glass-card controls-card autohide">
+      
+      <!-- Back to Map Hub Button -->
+      <button id="ctrl-hub" class="btn-control btn-hub" title="Volver al Mapa Hub">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+          <line x1="8" y1="2" x2="8" y2="18"></line>
+          <line x1="16" y1="6" x2="16" y2="22"></line>
+        </svg>
+        <span class="hub-text-label">Mapa</span>
+      </button>
+
+      <div class="divider"></div>
+
+      <!-- Auto-Rotate -->
+      <button id="ctrl-rotate" class="btn-control" title="Rotación Automática">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-play">
+          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-pause hidden">
+          <rect x="6" y="4" width="4" height="16"></rect>
+          <rect x="14" y="4" width="4" height="16"></rect>
+        </svg>
+      </button>
+
+      <div class="divider"></div>
+
+      <!-- Zoom In -->
+      <button id="ctrl-zoom-in" class="btn-control" title="Acercar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+      </button>
+
+      <!-- Zoom Out -->
+      <button id="ctrl-zoom-out" class="btn-control" title="Alejar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+      </button>
+
+      <div class="divider"></div>
+
+      <!-- Reset view -->
+      <button id="ctrl-reset" class="btn-control" title="Restaurar Vista">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+      </button>
+
+      <!-- Fullscreen -->
+      <button id="ctrl-fullscreen" class="btn-control" title="Pantalla Completa">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+        </svg>
+      </button>
+
+      <!-- Multi-Scene Pagination Controls Bar -->
+      <div id="scene-pagination-bar" class="scene-pagination-bar hidden">
+        <div class="divider"></div>
+        <button id="btn-prev-scene" class="btn-scene-nav" title="Escena Anterior">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        <div id="scene-pills-container" class="scene-pills-container">
+          <!-- Dynamic scene pills -->
+        </div>
+        <button id="btn-next-scene" class="btn-scene-nav" title="Escena Siguiente">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Pannellum JS CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+  
+  <!-- Main Script -->
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

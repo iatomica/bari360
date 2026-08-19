@@ -215,7 +215,39 @@ const DEFAULT_ENTRIES = [
   }
 ];
 
+let memoryEntriesCache = null;
+
+export async function fetchRemoteEntries() {
+  try {
+    const res = await fetch('/api/entries');
+    if (res.ok) {
+      const remoteData = await res.json();
+      if (Array.isArray(remoteData) && remoteData.length > 0) {
+        memoryEntriesCache = remoteData;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteData));
+        return remoteData;
+      }
+    }
+  } catch (err) {
+    console.warn('API /api/entries not reachable, using cached entries:', err.message);
+  }
+
+  // If DB/API is empty, seed defaults to backend!
+  try {
+    await fetch('/api/entries/bulk', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(DEFAULT_ENTRIES)
+    });
+  } catch (e) {}
+
+  return getEntries();
+}
+
 export function getEntries() {
+  if (memoryEntriesCache && memoryEntriesCache.length > 0) {
+    return memoryEntriesCache;
+  }
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) {
     saveAllEntries(DEFAULT_ENTRIES);
@@ -227,6 +259,7 @@ export function getEntries() {
       saveAllEntries(DEFAULT_ENTRIES);
       return DEFAULT_ENTRIES;
     }
+    memoryEntriesCache = parsed;
     return parsed;
   } catch (e) {
     console.error('Failed to parse entries from localStorage, preserving defaults:', e);
@@ -235,8 +268,18 @@ export function getEntries() {
   }
 }
 
-export function saveAllEntries(entries) {
+export async function saveAllEntries(entries) {
+  memoryEntriesCache = entries;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+  try {
+    await fetch('/api/entries/bulk', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(entries)
+    });
+  } catch (e) {
+    console.warn('Could not sync saveAllEntries to backend:', e.message);
+  }
 }
 
 export function getEntryById(id) {
@@ -244,29 +287,51 @@ export function getEntryById(id) {
   return entries.find(e => e.id === id) || null;
 }
 
-export function saveEntry(entryData) {
+export async function saveEntry(entryData) {
   const entries = getEntries();
   const existingIndex = entries.findIndex(e => e.id === entryData.id);
-  
+  let updatedEntry = { ...entryData };
+
   if (existingIndex >= 0) {
     entries[existingIndex] = { ...entries[existingIndex], ...entryData };
+    updatedEntry = entries[existingIndex];
   } else {
-    if (!entryData.id) {
-      entryData.id = 'entry-' + Date.now();
+    if (!updatedEntry.id) {
+      updatedEntry.id = 'entry-' + Date.now();
     }
-    entries.push(entryData);
+    entries.push(updatedEntry);
   }
-  saveAllEntries(entries);
-  return entryData;
+
+  memoryEntriesCache = entries;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+
+  try {
+    await fetch('/api/entries', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedEntry)
+    });
+  } catch (e) {
+    console.warn('Could not sync saveEntry to backend:', e.message);
+  }
+
+  return updatedEntry;
 }
 
-export function deleteEntry(id) {
+export async function deleteEntry(id) {
   const entries = getEntries();
   const filtered = entries.filter(e => e.id !== id);
-  saveAllEntries(filtered);
+  memoryEntriesCache = filtered;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+
+  try {
+    await fetch(`/api/entries/${id}`, { method: 'DELETE' });
+  } catch (e) {
+    console.warn('Could not sync deleteEntry to backend:', e.message);
+  }
 }
 
-export function resetEntriesToDefault() {
-  saveAllEntries(DEFAULT_ENTRIES);
+export async function resetEntriesToDefault() {
+  await saveAllEntries(DEFAULT_ENTRIES);
   return DEFAULT_ENTRIES;
 }

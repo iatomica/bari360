@@ -1,4 +1,4 @@
-import { getEntries, getEntryById, saveEntry, deleteEntry } from './entriesStore.js';
+import { getEntries, fetchRemoteEntries, getEntryById, saveEntry, deleteEntry } from './entriesStore.js';
 import { isLoggedIn, loginAdmin, logoutAdmin } from './authStore.js';
 import { getMediaLibrary, addMediaItem, deleteMediaItem } from './mediaStore.js';
 import { optimizeImageToWebP, formatBytes } from './imageOptimizer.js';
@@ -14,6 +14,15 @@ window.addEventListener('DOMContentLoaded', () => {
   const loadingScreen = document.getElementById('loading-screen');
   const ctrlHubBtn = document.getElementById('ctrl-hub');
   const hudOverlay = document.querySelector('.hud-overlay');
+
+  // Ensure site starts ON THE MAP HUB BY DEFAULT
+  if (hubScreen) hubScreen.classList.remove('hidden');
+  if (loadingScreen) loadingScreen.classList.add('hidden');
+
+  // Async fetch remote entries from database and sync pins
+  fetchRemoteEntries().then(() => {
+    renderDynamicMapPins();
+  });
 
   let currentActiveEntry = null;
   let currentActiveScene = null;
@@ -159,9 +168,6 @@ window.addEventListener('DOMContentLoaded', () => {
     preloaderImg.onerror = handleReady;
     preloaderImg.src = panoramaUrl;
   }
-
-  // Initial panorama background load
-  initOrLoadPanorama('/360/bahia-serena.webp');
 
   // Multi-Scene Pagination HUD Elements
   const scenePaginationBar = document.getElementById('scene-pagination-bar');

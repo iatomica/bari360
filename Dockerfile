@@ -1,4 +1,4 @@
-# Stage 1: Build static assets
+# Stage 1: Build static Vite frontend
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
@@ -6,9 +6,18 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-# Stage 2: Production Nginx Server
-FROM nginx:alpine
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=builder /app/dist /usr/share/nginx/html
+# Stage 2: Production Node.js API & Web Server
+FROM node:20-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/public ./public
+COPY server.js ./
+COPY entriesStore.js ./
+COPY mediaStore.js ./
+
 EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+ENV PORT=80
+
+CMD ["node", "server.js"]

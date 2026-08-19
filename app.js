@@ -109,42 +109,55 @@ window.addEventListener('DOMContentLoaded', () => {
   let isPanoramaLoaded = false;
 
   function initOrLoadPanorama(panoramaUrl, pitch = 0, yaw = 0, hfov = 100) {
+    isPanoramaLoaded = false;
+    if (loadingScreen) loadingScreen.classList.remove('hidden');
+
     if (viewer && typeof viewer.destroy === 'function') {
       try { viewer.destroy(); } catch (err) {}
+      viewer = null;
     }
 
-    isPanoramaLoaded = false;
-
-    viewer = pannellum.viewer('panorama', {
-      type: 'equirectangular',
-      panorama: panoramaUrl,
-      autoLoad: true,
-      autoRotate: -2,
-      showControls: false,
-      yaw: yaw,
-      pitch: pitch,
-      hfov: hfov,
-      minHfov: 30,
-      maxHfov: 120,
-      keyboardZoom: true,
-      mouseZoom: true
-    });
-
-    viewer.on('load', () => {
-      isPanoramaLoaded = true;
-      if (loadingScreen && !loadingScreen.classList.contains('hidden')) {
-        loadingScreen.classList.add('hidden');
-        enterExperience();
+    const preloaderImg = new Image();
+    const handleReady = () => {
+      if (viewer && typeof viewer.destroy === 'function') {
+        try { viewer.destroy(); } catch (err) {}
       }
-    });
 
-    // Fallback timer if load event fires fast
-    setTimeout(() => {
-      if (loadingScreen && !loadingScreen.classList.contains('hidden')) {
-        loadingScreen.classList.add('hidden');
-        enterExperience();
-      }
-    }, 450);
+      viewer = pannellum.viewer('panorama', {
+        type: 'equirectangular',
+        panorama: panoramaUrl,
+        autoLoad: true,
+        autoRotate: -2,
+        showControls: false,
+        yaw: yaw,
+        pitch: pitch,
+        hfov: hfov,
+        minHfov: 30,
+        maxHfov: 120,
+        keyboardZoom: true,
+        mouseZoom: true
+      });
+
+      viewer.on('load', () => {
+        isPanoramaLoaded = true;
+        if (loadingScreen && !loadingScreen.classList.contains('hidden')) {
+          loadingScreen.classList.add('hidden');
+          enterExperience();
+        }
+      });
+
+      setTimeout(() => {
+        isPanoramaLoaded = true;
+        if (loadingScreen && !loadingScreen.classList.contains('hidden')) {
+          loadingScreen.classList.add('hidden');
+          enterExperience();
+        }
+      }, 600);
+    };
+
+    preloaderImg.onload = handleReady;
+    preloaderImg.onerror = handleReady;
+    preloaderImg.src = panoramaUrl;
   }
 
   // Initial panorama background load

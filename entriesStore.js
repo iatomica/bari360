@@ -1,6 +1,6 @@
 // Storage module for Barivision 360 Entries
 
-const STORAGE_KEY = 'barivision_360_entries_v1';
+const STORAGE_KEY = 'barivision_360_entries_v2';
 
 const DEFAULT_ENTRIES = [
   {
@@ -9,7 +9,7 @@ const DEFAULT_ENTRIES = [
     subtitle: 'Playa Nahuel Huapi • Km 12',
     description: 'Tranquila bahía sobre el lago Nahuel Huapi de arenas finas y aguas calmas.',
     coverImage: '/360/bahia-serena.webp',
-    mapPos: { top: 40.0, left: 32.0 },
+    mapPos: { top: 38.0, left: 33.0 },
     address: 'Av. Bustillo Km 12, Bariloche',
     googleMapsUrl: 'https://maps.google.com/?q=-41.1180,-71.4350',
     referenceLinks: [
@@ -25,7 +25,7 @@ const DEFAULT_ENTRIES = [
     subtitle: 'Mirador de Costa y Lago • 2 Escenas 360°',
     description: 'Impresionante perspectiva panorámica combinando vistas de la costa y las sierras.',
     coverImage: '/360/catedral-huapi-1.webp',
-    mapPos: { top: 32.0, left: 45.0 },
+    mapPos: { top: 34.0, left: 48.0 },
     address: 'Costa Nahuel Huapi, Bariloche',
     googleMapsUrl: 'https://maps.google.com/?q=-41.1200,-71.3800',
     referenceLinks: [
@@ -42,7 +42,7 @@ const DEFAULT_ENTRIES = [
     subtitle: 'Mirador Panorámico • 2 Escenas 360°',
     description: 'Reconocida por National Geographic como una de las mejores vistas panorámicas del mundo.',
     coverImage: '/360/cerro-campanario-1.webp',
-    mapPos: { top: 30.0, left: 25.0 },
+    mapPos: { top: 30.0, left: 26.0 },
     address: 'Av. Bustillo Km 17.5, Bariloche',
     googleMapsUrl: 'https://maps.google.com/?q=-41.0770,-71.4720',
     referenceLinks: [

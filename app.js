@@ -3,8 +3,8 @@ import { isLoggedIn, loginAdmin, logoutAdmin } from './authStore.js';
 import { getMediaLibrary, addMediaItem, deleteMediaItem } from './mediaStore.js';
 import { optimizeImageToWebP, formatBytes } from './imageOptimizer.js';
 
-// Wait for DOM content to be fully loaded
-window.addEventListener('DOMContentLoaded', () => {
+// App Initialization Engine
+function initApp() {
   let viewer;
   let experienceStarted = false;
   let idleTimer;
@@ -21,7 +21,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Async fetch remote entries from database and sync pins
   fetchRemoteEntries().then(() => {
-    renderDynamicMapPins();
+    initLeafletMap();
   });
 
   let currentActiveEntry = null;
@@ -351,295 +351,12 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // --- Interactive 2D Map Engine (Camera Viewport & MapWorld Architecture) ---
+  // --- Real Geographic Leaflet Map Engine ---
   const mapViewport = document.getElementById('hub-map-viewport');
-  const mapWrapper = document.getElementById('hub-map-wrapper');
   const mapZoomInBtn = document.getElementById('map-zoom-in');
   const mapZoomOutBtn = document.getElementById('map-zoom-out');
   const mapZoomResetBtn = document.getElementById('map-zoom-reset');
   const mapZoomLevelLabel = document.getElementById('map-zoom-level');
-
-  // Shared fixed MapWorld dimensions across all devices (Desktop, Mobile, Tablet, Portrait, Landscape)
-  const MAP_WORLD_WIDTH = 1920;
-  const MAP_WORLD_HEIGHT = 815;
-
-  function isMobileOrTablet() {
-    return window.innerWidth <= 1024;
-  }
-
-  function getMinScale() {
-    return isMobileOrTablet() ? 1.5 : 1.0;
-  }
-
-  function getMaxScale() {
-    return isMobileOrTablet() ? 2.5 : 2.0;
-  }
-
-  let mapScale = isMobileOrTablet() ? 1.5 : 1.0;
-  let mapX = 0;
-  let mapY = 0;
-  let isDraggingMap = false;
-  let hasMovedMapFar = false;
-
-  let lastPointerX = 0;
-  let lastPointerY = 0;
-  let lastPointerTime = 0;
-  let velocityX = 0;
-  let velocityY = 0;
-  let inertiaAnimId = null;
-
-  function stopInertia() {
-    if (inertiaAnimId !== null) {
-      cancelAnimationFrame(inertiaAnimId);
-      inertiaAnimId = null;
-    }
-  }
-
-  function syncScaleLimits() {
-    const curMin = getMinScale();
-    const curMax = getMaxScale();
-    if (mapScale < curMin) mapScale = curMin;
-    if (mapScale > curMax) mapScale = curMax;
-  }
-
-  function getValidBounds() {
-    if (!mapViewport) return { minX: 0, maxX: 0, minY: 0, maxY: 0 };
-    syncScaleLimits();
-    const rect = mapViewport.getBoundingClientRect();
-    const vpW = rect.width;
-    const vpH = rect.height;
-
-    const scaledW = MAP_WORLD_WIDTH * mapScale;
-    const scaledH = MAP_WORLD_HEIGHT * mapScale;
-
-    let minX, maxX, minY, maxY;
-
-    // Horizontal Camera Clamping:
-    if (scaledW > vpW) {
-      // MapWorld is wider than camera viewport (mobile portrait/landscape): pan left/right between 0 and (vpW - scaledW)
-      minX = vpW - scaledW;
-      maxX = 0;
-    } else {
-      // Camera viewport is wider than MapWorld (desktop): center MapWorld horizontally
-      minX = (vpW - scaledW) / 2;
-      maxX = minX;
-    }
-
-    // Vertical Camera Clamping:
-    if (scaledH > vpH) {
-      // MapWorld is taller than camera viewport (mobile landscape/zoomed): pan top/bottom between 0 and (vpH - scaledH)
-      minY = vpH - scaledH;
-      maxY = 0;
-    } else {
-      // Camera viewport is taller than MapWorld (mobile portrait / desktop): center MapWorld vertically
-      minY = (vpH - scaledH) / 2;
-      maxY = minY;
-    }
-
-    return { minX, maxX, minY, maxY, vpW, vpH };
-  }
-
-  function centerMapCameraInitial() {
-    syncScaleLimits();
-    const bounds = getValidBounds();
-    mapX = Math.min(bounds.maxX, Math.max(bounds.minX, (bounds.vpW - MAP_WORLD_WIDTH * mapScale) / 2));
-    mapY = Math.min(bounds.maxY, Math.max(bounds.minY, (bounds.vpH - MAP_WORLD_HEIGHT * mapScale) / 2));
-    renderMapTransform(false);
-  }
-
-  const mapResizeObserver = new ResizeObserver(() => {
-    syncScaleLimits();
-    const bounds = getValidBounds();
-    mapX = Math.min(bounds.maxX, Math.max(bounds.minX, mapX));
-    mapY = Math.min(bounds.maxY, Math.max(bounds.minY, mapY));
-    renderMapTransform(false);
-  });
-  if (mapViewport) mapResizeObserver.observe(mapViewport);
-
-  setTimeout(centerMapCameraInitial, 50);
-
-  function startInertiaAndSpring() {
-    stopInertia();
-    let lastFrameTime = performance.now();
-    const friction = 0.92;
-
-    function stepInertia(now) {
-      const deltaT = Math.min(0.032, (now - lastFrameTime) / 1000);
-      lastFrameTime = now;
-
-      const bounds = getValidBounds();
-      velocityX *= friction;
-      velocityY *= friction;
-
-      let nextX = mapX + velocityX * deltaT;
-      let nextY = mapY + velocityY * deltaT;
-
-      if (nextX <= bounds.minX) { nextX = bounds.minX; velocityX = 0; }
-      if (nextX >= bounds.maxX) { nextX = bounds.maxX; velocityX = 0; }
-      if (nextY <= bounds.minY) { nextY = bounds.minY; velocityY = 0; }
-      if (nextY >= bounds.maxY) { nextY = bounds.maxY; velocityY = 0; }
-
-      mapX = nextX;
-      mapY = nextY;
-
-      renderMapTransform(false);
-
-      if (Math.hypot(velocityX, velocityY) > 5) {
-        inertiaAnimId = requestAnimationFrame(stepInertia);
-      } else {
-        renderMapTransform(true);
-        inertiaAnimId = null;
-      }
-    }
-
-    inertiaAnimId = requestAnimationFrame(stepInertia);
-  }
-
-  function renderMapTransform(animate = false) {
-    if (mapViewport && mapWrapper) {
-      syncScaleLimits();
-      const curMin = getMinScale();
-      const curMax = getMaxScale();
-
-      if (animate) {
-        mapWrapper.classList.add('animating');
-      } else {
-        mapWrapper.classList.remove('animating');
-      }
-
-      mapWrapper.style.transform = `translate3d(${mapX}px, ${mapY}px, 0px) scale(${mapScale})`;
-
-      if (mapZoomLevelLabel) {
-        mapZoomLevelLabel.textContent = `${Math.round(mapScale * 100)}%`;
-      }
-
-      if (mapZoomInBtn) {
-        mapZoomInBtn.style.opacity = mapScale >= curMax ? '0.35' : '1';
-        mapZoomInBtn.style.pointerEvents = mapScale >= curMax ? 'none' : 'auto';
-      }
-      if (mapZoomOutBtn) {
-        mapZoomOutBtn.style.opacity = mapScale <= curMin ? '0.35' : '1';
-        mapZoomOutBtn.style.pointerEvents = mapScale <= curMin ? 'none' : 'auto';
-      }
-    }
-  }
-
-  function setZoom(newScale, focalX = null, focalY = null, animate = true) {
-    stopInertia();
-    syncScaleLimits();
-    const curMin = getMinScale();
-    const curMax = getMaxScale();
-
-    const clampedScale = Math.min(curMax, Math.max(curMin, newScale));
-    if (clampedScale === mapScale) return;
-
-    const rect = mapViewport.getBoundingClientRect();
-    if (focalX === null) focalX = rect.width / 2;
-    if (focalY === null) focalY = rect.height / 2;
-
-    const pointX = (focalX - mapX) / mapScale;
-    const pointY = (focalY - mapY) / mapScale;
-
-    mapScale = clampedScale;
-    mapX = focalX - pointX * mapScale;
-    mapY = focalY - pointY * mapScale;
-
-    const bounds = getValidBounds();
-    mapX = Math.min(bounds.maxX, Math.max(bounds.minX, mapX));
-    mapY = Math.min(bounds.maxY, Math.max(bounds.minY, mapY));
-
-    renderMapTransform(animate);
-  }
-
-  function resetMapZoom() {
-    stopInertia();
-    mapScale = getMinScale();
-    centerMapCameraInitial();
-    renderMapTransform(true);
-  }
-
-  if (mapViewport && mapWrapper) {
-    mapViewport.addEventListener('dragstart', (e) => e.preventDefault());
-
-    mapViewport.addEventListener('wheel', (e) => {
-      e.preventDefault();
-      const delta = e.deltaY < 0 ? 0.15 : -0.15;
-      const rect = mapViewport.getBoundingClientRect();
-      setZoom(mapScale + delta, e.clientX - rect.left, e.clientY - rect.top, false);
-    }, { passive: false });
-
-    mapViewport.addEventListener('pointerdown', (e) => {
-      if (e.target.closest('button') || e.target.closest('.poi-editor-panel') || e.target.closest('.modal-overlay') || e.target.closest('.admin-drawer-overlay')) return;
-
-      stopInertia();
-      isDraggingMap = true;
-      hasMovedMapFar = false;
-
-      lastPointerX = e.clientX;
-      lastPointerY = e.clientY;
-      lastPointerTime = performance.now();
-      velocityX = 0;
-      velocityY = 0;
-
-      mapViewport.classList.add('is-dragging');
-      mapWrapper.classList.remove('animating');
-
-      try { mapViewport.setPointerCapture(e.pointerId); } catch (err) {}
-      e.preventDefault();
-    });
-
-    mapViewport.addEventListener('pointermove', (e) => {
-      if (!isDraggingMap) return;
-      const now = performance.now();
-      const dt = Math.max(0.008, (now - lastPointerTime) / 1000);
-
-      const dx = e.clientX - lastPointerX;
-      const dy = e.clientY - lastPointerY;
-
-      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
-        hasMovedMapFar = true;
-      }
-
-      const bounds = getValidBounds();
-      mapX = Math.min(bounds.maxX, Math.max(bounds.minX, mapX + dx));
-      mapY = Math.min(bounds.maxY, Math.max(bounds.minY, mapY + dy));
-
-      velocityX = velocityX * 0.3 + (dx / dt) * 0.7;
-      velocityY = velocityY * 0.3 + (dy / dt) * 0.7;
-
-      lastPointerX = e.clientX;
-      lastPointerY = e.clientY;
-      lastPointerTime = now;
-
-      renderMapTransform(false);
-      e.preventDefault();
-    });
-
-    const endDrag = (e) => {
-      if (!isDraggingMap) return;
-      isDraggingMap = false;
-      mapViewport.classList.remove('is-dragging');
-      try { mapViewport.releasePointerCapture(e.pointerId); } catch (err) {}
-      startInertiaAndSpring();
-
-      // Handle Interactive Map Location Picker click
-      if (isMapPickingMode && !hasMovedMapFar) {
-        const rect = mapWrapper.getBoundingClientRect();
-        const clickX = e.clientX - rect.left;
-        const clickY = e.clientY - rect.top;
-
-        const topPerc = Math.min(100, Math.max(0, (clickY / rect.height) * 100));
-        const leftPerc = Math.min(100, Math.max(0, (clickX / rect.width) * 100));
-
-        const cb = mapPickingCallback;
-        stopMapPickingMode();
-        if (cb) cb(topPerc, leftPerc);
-      }
-    };
-
-    mapViewport.addEventListener('pointerup', endDrag);
-    mapViewport.addEventListener('pointercancel', endDrag);
-  }
 
   // --- Interactive Map Location Picker Logic ---
   function startMapPickingMode(callback, bannerMessage = 'Haz clic en cualquier lugar del mapa para fijar la ubicación.') {
@@ -827,45 +544,88 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // --- Real Geographic Leaflet Map Engine ---
+  let leafletMap = null;
+  let leafletMarkersGroup = null;
+
+  function initLeafletMap() {
+    const container = document.getElementById('leaflet-map');
+    if (!container || typeof L === 'undefined') return;
+
+    if (!leafletMap) {
+      // Center tightly on Bariloche region: Circuito Chico, Llao Llao, Colonia Suiza, Villa Catedral, Bariloche
+      leafletMap = L.map('leaflet-map', {
+        center: [-41.11, -71.42],
+        zoom: 12,
+        minZoom: 11,
+        maxZoom: 16,
+        zoomControl: false,
+        maxBounds: L.latLngBounds(L.latLng(-41.25, -71.60), L.latLng(-40.98, -71.25)),
+        maxBoundsViscosity: 0.8
+      });
+
+      // CartoDB Voyager High-Contrast Tile Layer (White land, black roads/paths, blue lakes & water)
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        subdomains: 'abcd',
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+      }).addTo(leafletMap);
+
+      leafletMarkersGroup = L.layerGroup().addTo(leafletMap);
+
+      if (mapZoomInBtn) mapZoomInBtn.onclick = () => leafletMap.zoomIn();
+      if (mapZoomOutBtn) mapZoomOutBtn.onclick = () => leafletMap.zoomOut();
+      if (mapZoomResetBtn) mapZoomResetBtn.onclick = () => leafletMap.setView([-41.11, -71.42], 12);
+
+      leafletMap.on('zoomend', () => {
+        if (mapZoomLevelLabel) {
+          const z = leafletMap.getZoom();
+          mapZoomLevelLabel.textContent = `${Math.round((z / 12) * 100)}%`;
+        }
+      });
+    }
+
+    setTimeout(() => {
+      if (leafletMap) leafletMap.invalidateSize();
+    }, 200);
+
+    renderDynamicMapPins();
+  }
+
   // --- Dynamic POI Pins Rendering with In-Context Admin Actions ---
   const poiSelect = document.getElementById('poi-select');
   let loadedEntries = [];
   let currentTargetPin = null;
 
   function renderDynamicMapPins() {
-    if (!mapWrapper) return;
-
-    const existingPins = mapWrapper.querySelectorAll('.map-pin');
-    existingPins.forEach(p => p.remove());
-
     loadedEntries = getEntries();
     if (poiSelect) poiSelect.innerHTML = '';
+
+    if (leafletMap && leafletMarkersGroup) {
+      leafletMarkersGroup.clearLayers();
+    }
 
     const adminActive = isLoggedIn();
 
     loadedEntries.forEach((entry) => {
-      const topVal = entry.mapPos ? entry.mapPos.top : 50;
-      const leftVal = entry.mapPos ? entry.mapPos.left : 50;
+      let lat = entry.lat;
+      let lng = entry.lng;
 
-      // Edge Clamping position detection
-      let edgeClasses = '';
-      if (topVal < 30) edgeClasses += ' card-edge-top';
-      if (topVal > 70) edgeClasses += ' card-edge-bottom';
-      if (leftVal < 25) edgeClasses += ' card-edge-left';
-      if (leftVal > 75) edgeClasses += ' card-edge-right';
+      if (!lat || !lng) {
+        const topVal = entry.mapPos ? entry.mapPos.top : 50;
+        const leftVal = entry.mapPos ? entry.mapPos.left : 50;
+        lat = -41.02 - (topVal / 100) * 0.16;
+        lng = -71.55 + (leftVal / 100) * 0.38;
+      }
 
       const pin = document.createElement('div');
       pin.id = `pin-${entry.id}`;
-      pin.className = `map-pin${edgeClasses}`;
-      pin.style.top = `${topVal}%`;
-      pin.style.left = `${leftVal}%`;
+      pin.className = `map-pin`;
       pin.dataset.id = entry.id;
 
-      // In-Context Admin Actions HTML on card hover
       const adminActionsHtml = adminActive ? `
         <div class="pin-card-admin-actions">
           <button class="btn-pin-admin btn-pin-admin-edit" data-id="${entry.id}">Editar</button>
-          <button class="btn-pin-admin btn-pin-admin-move" data-id="${entry.id}">Mover</button>
           <button class="btn-pin-admin btn-pin-admin-delete" data-id="${entry.id}">Eliminar</button>
         </div>
       ` : '';
@@ -896,11 +656,10 @@ window.addEventListener('DOMContentLoaded', () => {
         </div>
       `;
 
-      // 2.5s Hover Card Persistence & Z-Index Layering
       let hoverCardTimer = null;
       pin.addEventListener('mouseenter', () => {
         if (hoverCardTimer) clearTimeout(hoverCardTimer);
-        mapWrapper.querySelectorAll('.map-pin').forEach(p => {
+        document.querySelectorAll('.map-pin').forEach(p => {
           if (p !== pin) p.classList.remove('is-card-hovered');
         });
         pin.classList.add('is-card-hovered');
@@ -913,40 +672,22 @@ window.addEventListener('DOMContentLoaded', () => {
         }, 2500);
       });
 
-      pin.addEventListener('click', (e) => {
-        if (hasMovedMapFar) {
-          e.stopPropagation();
-          e.preventDefault();
-        }
-      }, true);
-
-      // Actions bindings
       const actionBtn = pin.querySelector('.btn-pin-action');
-      actionBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        startExperienceWithEntry(entry);
-      });
+      if (actionBtn) {
+        actionBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          startExperienceWithEntry(entry);
+        });
+      }
 
       if (adminActive) {
         const btnEdit = pin.querySelector('.btn-pin-admin-edit');
-        const btnMove = pin.querySelector('.btn-pin-admin-move');
         const btnDel = pin.querySelector('.btn-pin-admin-delete');
 
         if (btnEdit) {
           btnEdit.addEventListener('click', (e) => {
             e.stopPropagation();
             openDrawerForEditEntry(entry);
-          });
-        }
-
-        if (btnMove) {
-          btnMove.addEventListener('click', (e) => {
-            e.stopPropagation();
-            startMapPickingMode((top, left) => {
-              entry.mapPos = { top, left };
-              saveEntry(entry);
-              renderDynamicMapPins();
-            }, `Haz clic en la nueva ubicación para el punto: ${entry.title}`);
           });
         }
 
@@ -961,7 +702,19 @@ window.addEventListener('DOMContentLoaded', () => {
         }
       }
 
-      mapWrapper.appendChild(pin);
+      if (leafletMarkersGroup && typeof L !== 'undefined') {
+        const customIcon = L.divIcon({
+          className: 'leaflet-custom-div-icon',
+          html: pin,
+          iconSize: [32, 32],
+          iconAnchor: [16, 16]
+        });
+
+        const marker = L.marker([lat, lng], { icon: customIcon }).addTo(leafletMarkersGroup);
+        marker.on('click', () => {
+          startExperienceWithEntry(entry);
+        });
+      }
 
       if (poiSelect) {
         const opt = document.createElement('option');
@@ -970,12 +723,6 @@ window.addEventListener('DOMContentLoaded', () => {
         poiSelect.appendChild(opt);
       }
     });
-
-    if (loadedEntries.length > 0) {
-      const firstPin = mapWrapper.querySelector(`#pin-${loadedEntries[0].id}`);
-      currentTargetPin = firstPin;
-      updatePoiCoordDisplay();
-    }
   }
 
   // --- Admin Drawer Entry Editor Logic ---
@@ -1261,11 +1008,6 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Zoom Buttons
-  if (mapZoomInBtn) mapZoomInBtn.addEventListener('click', () => setZoom(mapScale + 0.25, null, null, true));
-  if (mapZoomOutBtn) mapZoomOutBtn.addEventListener('click', () => setZoom(mapScale - 0.25, null, null, true));
-  if (mapZoomResetBtn) mapZoomResetBtn.addEventListener('click', resetMapZoom);
-
   // Transition into 360 Experience
   function enterExperience() {
     if (hubScreen) hubScreen.classList.add('hidden');
@@ -1278,20 +1020,61 @@ window.addEventListener('DOMContentLoaded', () => {
     setupActivityListeners();
   }
 
+  // Volver al Mapa Hub Button Handler
   if (ctrlHubBtn) {
-    ctrlHubBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
+    ctrlHubBtn.onclick = (e) => {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
       exitToMapHub();
-    });
+    };
+  }
+
+  // Fullscreen Control Handler (Pannellum native API + fallback)
+  const ctrlFullscreenBtn = document.getElementById('ctrl-fullscreen');
+  if (ctrlFullscreenBtn) {
+    ctrlFullscreenBtn.onclick = (e) => {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      if (viewer && typeof viewer.toggleFullscreen === 'function') {
+        try {
+          viewer.toggleFullscreen();
+          return;
+        } catch (err) {}
+      }
+      const docEl = document.documentElement;
+      if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        if (docEl.requestFullscreen) docEl.requestFullscreen().catch(() => {});
+        else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+      }
+    };
   }
 
   function exitToMapHub() {
     experienceStarted = false;
-    clearTimeout(idleTimer);
-    hideHUD();
-    if (hudOverlay) hudOverlay.classList.add('hidden');
+    if (idleTimer) clearTimeout(idleTimer);
+
+    if (hudOverlay) {
+      hudOverlay.classList.add('hidden');
+    }
     document.body.classList.remove('hud-active');
-    if (hubScreen) hubScreen.classList.remove('hidden');
+
+    if (hubScreen) {
+      hubScreen.classList.remove('hidden');
+      hubScreen.style.display = 'block';
+    }
+
+    if (leafletMap) {
+      setTimeout(() => {
+        leafletMap.invalidateSize();
+      }, 50);
+    }
   }
 
   function showHUD() {
@@ -1321,4 +1104,13 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Initial load
   updateAdminUI();
-});
+  setTimeout(() => {
+    initLeafletMap();
+  }, 100);
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}

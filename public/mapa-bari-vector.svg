@@ -1,0 +1,198 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" width="100%" height="100%">
+  <defs>
+    <!-- Dark Topography Gradients -->
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b0f19" />
+      <stop offset="50%" stop-color="#0f1422" />
+      <stop offset="100%" stop-color="#090c15" />
+    </linearGradient>
+
+    <!-- Lake Nahuel Huapi Deep Water Gradient -->
+    <linearGradient id="lake-nahuel-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1b3a5c" />
+      <stop offset="50%" stop-color="#0f2847" />
+      <stop offset="100%" stop-color="#0a1d36" />
+    </linearGradient>
+
+    <!-- Lake Moreno Water Gradient -->
+    <linearGradient id="lake-moreno-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e4066" />
+      <stop offset="100%" stop-color="#112946" />
+    </linearGradient>
+
+    <!-- Mountain Shading Gradients -->
+    <radialGradient id="mountain-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#2a334d" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="#141926" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Base Terrain Background -->
+  <rect width="1600" height="1000" fill="url(#bg-grad)" />
+
+  <!-- Subtle Grid Pattern -->
+  <g opacity="0.08" stroke="#ffffff" stroke-width="1">
+    <pattern id="grid" width="80" height="80" patternUnits="userSpaceOnUse">
+      <path d="M 80 0 L 0 0 0 80" fill="none" stroke="currentColor" stroke-width="0.8" />
+    </pattern>
+    <rect width="1600" height="1000" fill="url(#grid)" />
+  </g>
+
+  <!-- Mountain Reliefs (Cerros) -->
+  <!-- Cerro López / Llao Llao Mountain Massif -->
+  <circle cx="280" cy="380" r="140" fill="url(#mountain-glow)" />
+  <!-- Cerro Campanario -->
+  <circle cx="580" cy="320" r="100" fill="url(#mountain-glow)" />
+  <!-- Cerro Catedral Mountain Range -->
+  <ellipse cx="670" cy="680" rx="220" ry="140" fill="url(#mountain-glow)" transform="rotate(-15 670 680)" />
+  <!-- Cerro Otto -->
+  <circle cx="1020" cy="480" r="130" fill="url(#mountain-glow)" />
+
+  <!-- Topographic Contour Lines -->
+  <g stroke="#ffffff" stroke-width="1" opacity="0.06" fill="none">
+    <ellipse cx="670" cy="680" rx="180" ry="100" transform="rotate(-15 670 680)" />
+    <ellipse cx="670" cy="680" rx="130" ry="70" transform="rotate(-15 670 680)" />
+    <ellipse cx="670" cy="680" rx="70" ry="40" transform="rotate(-15 670 680)" />
+    <circle cx="580" cy="320" r="70" />
+    <circle cx="580" cy="320" r="40" />
+    <circle cx="1020" cy="480" r="90" />
+    <circle cx="1020" cy="480" r="50" />
+  </g>
+
+  <!-- WATER BODIES (Lagos y Ríos) -->
+
+  <!-- LAGO NAHUEL HUAPI (Main Giant Lake taking northern region) -->
+  <path id="lago-nahuel-huapi" fill="url(#lake-nahuel-grad)" stroke="#2b5c8f" stroke-width="2" d="
+    M 0 0 
+    L 1600 0 
+    L 1600 320 
+    C 1480 340, 1380 350, 1280 380 
+    C 1180 410, 1140 420, 1120 420 
+    C 1050 420, 980 390, 920 370 
+    C 850 350, 780 345, 720 355 
+    C 660 365, 590 350, 520 330 
+    C 460 310, 420 280, 380 250 
+    C 340 220, 330 180, 310 160 
+    C 290 140, 260 150, 240 180 
+    C 220 210, 240 250, 270 280 
+    C 300 310, 280 330, 250 340 
+    C 230 345, 210 320, 200 300 
+    C 190 280, 170 270, 150 290 
+    C 130 310, 140 340, 160 360 
+    C 180 380, 170 410, 140 400 
+    C 110 390, 80 370, 50 340 
+    C 20 310, 0 300, 0 300 
+    Z
+  " />
+
+  <!-- LAGO MORENO OESTE Y ESTE -->
+  <path id="lago-moreno" fill="url(#lake-moreno-grad)" stroke="#2b5c8f" stroke-width="2" d="
+    M 320 390 
+    C 360 370, 420 370, 460 390 
+    C 500 410, 540 440, 560 480 
+    C 580 520, 540 550, 490 540 
+    C 440 530, 410 500, 370 490 
+    C 330 480, 290 460, 280 430 
+    C 270 400, 300 395, 320 390 
+    Z
+  " />
+
+  <!-- LAGO ESCONDIDO -->
+  <path id="lago-escondido" fill="url(#lake-moreno-grad)" stroke="#2b5c8f" stroke-width="1.5" d="
+    M 210 275 
+    C 225 265, 245 270, 240 285 
+    C 235 300, 215 305, 205 290 
+    Z
+  " />
+
+  <!-- LAGO GUTIÉRREZ (Southern Lake) -->
+  <path id="lago-gutierrez" fill="url(#lake-nahuel-grad)" stroke="#2b5c8f" stroke-width="2" d="
+    M 1080 720 
+    C 1120 710, 1180 740, 1210 800 
+    C 1240 860, 1260 930, 1270 1000 
+    L 1150 1000 
+    C 1140 920, 1110 840, 1070 780 
+    C 1050 750, 1060 730, 1080 720 
+    Z
+  " />
+
+  <!-- ARROYO LA ANGOSTURA (Connecting Channel between Lago Moreno & Nahuel Huapi) -->
+  <path id="arroyo-la-angostura" d="M 270 340 Q 280 365 295 390" fill="none" stroke="#38bdf8" stroke-width="6" stroke-linecap="round" opacity="0.9" />
+
+  <!-- ISLA HUEMUL (In Lago Nahuel Huapi) -->
+  <path id="isla-huemul" fill="#182338" stroke="#3b82f6" stroke-width="1.5" d="
+    M 820 310 
+    C 850 300, 870 320, 860 340 
+    C 850 360, 810 350, 800 330 
+    Z
+  " />
+
+  <!-- MAIN ROAD NETWORK (Rutas y Caminos Vectoriales) -->
+
+  <!-- Av. Ezequiel Bustillo (Main Coastal Highway along Nahuel Huapi) -->
+  <path id="av-bustillo" d="
+    M 280 250 
+    C 340 310, 420 330, 520 340 
+    C 620 350, 700 360, 820 370 
+    C 940 380, 1040 400, 1150 420
+  " fill="none" stroke="#f59e0b" stroke-width="4" opacity="0.8" />
+
+  <!-- Circuito Chico Loop Road -->
+  <path id="circuito-chico" d="
+    M 280 250 
+    C 240 270, 210 290, 220 320 
+    C 230 350, 270 340, 290 390 
+    C 310 440, 360 480, 420 480 
+    C 480 480, 530 440, 520 340
+  " fill="none" stroke="#fbbf24" stroke-width="3" stroke-dasharray="6,4" opacity="0.75" />
+
+  <!-- Access Road to Cerro Catedral -->
+  <path id="ruta-cerro-catedral" d="
+    M 700 360 
+    C 680 440, 660 540, 670 680
+  " fill="none" stroke="#eab308" stroke-width="3" opacity="0.7" />
+
+  <!-- Ruta 40 Sur (towards Lago Gutiérrez & El Bolsón) -->
+  <path id="ruta-40-sur" d="
+    M 1150 420 
+    C 1120 520, 1090 620, 1080 720 
+    C 1070 820, 1100 920, 1120 1000
+  " fill="none" stroke="#f59e0b" stroke-width="3.5" opacity="0.8" />
+
+  <!-- GEOGRAPHICAL TEXT LABELS (Vector Minimalist Typography) -->
+
+  <g font-family="Outfit, system-ui, sans-serif" font-weight="800" letter-spacing="3px">
+    
+    <!-- Major Lakes -->
+    <text x="750" y="160" fill="#60a5fa" font-size="28" opacity="0.65" text-anchor="middle">LAGO NAHUEL HUAPI</text>
+    <text x="420" y="450" fill="#93c5fd" font-size="18" opacity="0.75" text-anchor="middle">LAGO MORENO</text>
+    <text x="1160" y="870" fill="#93c5fd" font-size="16" opacity="0.65" text-anchor="middle" transform="rotate(75 1160 870)">LAGO GUTIÉRREZ</text>
+
+    <!-- Key Mountain Landmarks -->
+    <text x="280" y="420" fill="#94a3b8" font-size="13" opacity="0.6" text-anchor="middle">Cerro López</text>
+    <text x="580" y="300" fill="#cbd5e1" font-size="14" opacity="0.8" text-anchor="middle">Cerro Campanario</text>
+    <text x="670" y="650" fill="#cbd5e1" font-size="15" opacity="0.85" text-anchor="middle">Cerro Catedral</text>
+    <text x="1020" y="460" fill="#94a3b8" font-size="14" opacity="0.6" text-anchor="middle">Cerro Otto</text>
+
+    <!-- Cities & Regions -->
+    <text x="1200" y="400" fill="#ffffff" font-size="22" opacity="0.9">SAN CARLOS DE BARILOCHE</text>
+    <text x="250" y="220" fill="#cbd5e1" font-size="13" opacity="0.7">Península Llao Llao</text>
+    <text x="350" y="310" fill="#fbbf24" font-size="12" opacity="0.8">Circuito Chico</text>
+
+    <!-- Arroyo La Angostura Label -->
+    <text x="230" y="365" fill="#38bdf8" font-size="12" font-weight="700" letter-spacing="1px">Arroyo La Angostura</text>
+  </g>
+
+  <!-- VECTOR MAP SCALE & COMPASS -->
+  <g transform="translate(80, 860)">
+    <!-- North Arrow -->
+    <circle cx="40" cy="40" r="28" fill="#18191c" stroke="#383a40" stroke-width="1.5" />
+    <path d="M 40 18 L 47 44 L 40 38 L 33 44 Z" fill="#ef4444" />
+    <text x="40" y="14" font-family="Outfit, sans-serif" font-size="11" font-weight="800" fill="#ffffff" text-anchor="middle">N</text>
+
+    <!-- Map Title Card -->
+    <text x="88" y="32" font-family="Outfit, sans-serif" font-size="16" font-weight="800" fill="#ffffff" letter-spacing="2px">BARILOCHE 360°</text>
+    <text x="88" y="52" font-family="Outfit, sans-serif" font-size="11" font-weight="500" fill="#94a3b8" letter-spacing="1px">MAPA VECTORIAL DE NAVEGACIÓN</text>
+  </g>
+
+</svg>

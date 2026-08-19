@@ -1270,6 +1270,7 @@ window.addEventListener('DOMContentLoaded', () => {
   function enterExperience() {
     if (hubScreen) hubScreen.classList.add('hidden');
     if (loadingScreen) loadingScreen.classList.add('hidden');
+    if (hudOverlay) hudOverlay.classList.remove('hidden');
     document.body.classList.add('hud-active');
     experienceStarted = true;
     showHUD();
@@ -1288,12 +1289,23 @@ window.addEventListener('DOMContentLoaded', () => {
     experienceStarted = false;
     clearTimeout(idleTimer);
     hideHUD();
+    if (hudOverlay) hudOverlay.classList.add('hidden');
     document.body.classList.remove('hud-active');
     if (hubScreen) hubScreen.classList.remove('hidden');
   }
 
-  function showHUD() { if (experienceStarted) hudOverlay.classList.remove('hud-hidden'); }
-  function hideHUD() { if (experienceStarted) hudOverlay.classList.add('hud-hidden'); }
+  function showHUD() {
+    if (experienceStarted && hudOverlay) {
+      hudOverlay.classList.remove('hud-hidden');
+      hudOverlay.classList.remove('hidden');
+    }
+  }
+
+  function hideHUD() {
+    if (experienceStarted && hudOverlay) {
+      hudOverlay.classList.add('hud-hidden');
+    }
+  }
   function resetIdleTimer() {
     if (!experienceStarted) return;
     showHUD();

@@ -29,6 +29,52 @@ body, html {
   color: var(--text-primary);
 }
 
+/* Utility Classes */
+.hidden {
+  display: none !important;
+}
+
+#hub-screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 100;
+  background-color: #070913;
+}
+
+#hub-screen.hidden {
+  display: none !important;
+}
+
+#loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 300;
+}
+
+#loading-screen.hidden {
+  display: none !important;
+}
+
+.hud-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 50;
+}
+
+.hud-overlay.hidden {
+  display: none !important;
+}
+
 /* Panorama Container */
 #panorama-container {
   position: absolute;

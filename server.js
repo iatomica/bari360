@@ -177,7 +177,8 @@ app.delete('/api/entries/:id', async (req, res) => {
 app.use(express.static(distPath));
 app.use('/360', express.static(path.join(__dirname, 'public', '360')));
 
-app.get('*', (req, res) => {
+// Serve SPA index.html for all non-API routes (Express 4 & 5 compatible)
+app.get(/^(?!\/api).*/, (req, res) => {
   res.sendFile(path.join(distPath, 'index.html'));
 });
 

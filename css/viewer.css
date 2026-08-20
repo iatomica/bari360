@@ -60,7 +60,8 @@
 #panorama-container,
 #panorama,
 .pnlm-container,
-.pnlm-render-container {
+.pnlm-render-container,
+.pnlm-dragfix {
   position: absolute;
   top: 0;
   left: 0;
@@ -68,6 +69,13 @@
   height: 100vh;
   z-index: 1;
   background-color: #070913 !important;
+  pointer-events: auto !important;
+  cursor: grab !important;
+  touch-action: none !important;
+}
+
+.pnlm-grab {
+  cursor: grabbing !important;
 }
 
 #panorama {

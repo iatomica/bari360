@@ -136,7 +136,7 @@ function initApp() {
         type: 'equirectangular',
         panorama: panoramaUrl,
         autoLoad: true,
-        autoRotate: -2,
+        autoRotate: 0,
         showControls: false,
         yaw: yaw,
         pitch: pitch,
@@ -144,8 +144,12 @@ function initApp() {
         minHfov: 30,
         maxHfov: 120,
         keyboardZoom: true,
-        mouseZoom: true
+        mouseZoom: true,
+        draggable: true,
+        touchPan: true,
+        friction: 0.15
       });
+      window.viewer = viewer;
 
       viewer.on('load', () => {
         isPanoramaLoaded = true;

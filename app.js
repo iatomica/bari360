@@ -119,17 +119,17 @@ function initApp() {
 
   function initOrLoadPanorama(panoramaUrl, pitch = 0, yaw = 0, hfov = 100) {
     isPanoramaLoaded = false;
-    if (loadingScreen) loadingScreen.classList.remove('hidden');
-
-    if (viewer && typeof viewer.destroy === 'function') {
-      try { viewer.destroy(); } catch (err) {}
-      viewer = null;
+    if (loadingScreen) {
+      loadingScreen.classList.remove('hidden');
+      loadingScreen.style.display = 'flex';
     }
 
     const preloaderImg = new Image();
-    const handleReady = () => {
+
+    preloaderImg.onload = () => {
       if (viewer && typeof viewer.destroy === 'function') {
         try { viewer.destroy(); } catch (err) {}
+        viewer = null;
       }
 
       viewer = pannellum.viewer('panorama', {
@@ -149,23 +149,31 @@ function initApp() {
 
       viewer.on('load', () => {
         isPanoramaLoaded = true;
-        if (loadingScreen && !loadingScreen.classList.contains('hidden')) {
+        if (loadingScreen) {
           loadingScreen.classList.add('hidden');
-          enterExperience();
+          loadingScreen.style.display = 'none';
         }
+        enterExperience();
       });
 
-      setTimeout(() => {
-        isPanoramaLoaded = true;
-        if (loadingScreen && !loadingScreen.classList.contains('hidden')) {
+      viewer.on('error', () => {
+        if (loadingScreen) {
           loadingScreen.classList.add('hidden');
-          enterExperience();
+          loadingScreen.style.display = 'none';
         }
-      }, 600);
+        enterExperience();
+      });
     };
 
-    preloaderImg.onload = handleReady;
-    preloaderImg.onerror = handleReady;
+    preloaderImg.onerror = () => {
+      console.warn('Preloader image failed:', panoramaUrl);
+      if (loadingScreen) {
+        loadingScreen.classList.add('hidden');
+        loadingScreen.style.display = 'none';
+      }
+      enterExperience();
+    };
+
     preloaderImg.src = panoramaUrl;
   }
 

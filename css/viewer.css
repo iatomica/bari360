@@ -152,6 +152,15 @@
   border-color: #f97316 !important;
 }
 
+.btn-hub svg {
+  display: inline-block !important;
+  width: 18px !important;
+  height: 18px !important;
+  flex-shrink: 0 !important;
+  stroke: currentColor !important;
+  vertical-align: middle !important;
+}
+
 /* Scene Pagination Bar */
 .scene-pagination-bar {
   display: flex;

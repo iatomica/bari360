@@ -119,66 +119,39 @@ function initApp() {
 
   function initOrLoadPanorama(panoramaUrl, pitch = 0, yaw = 0, hfov = 100) {
     isPanoramaLoaded = false;
-    if (loadingScreen) {
-      loadingScreen.classList.remove('hidden');
-      loadingScreen.style.display = 'flex';
+    if (loadingScreen) loadingScreen.classList.remove('hidden');
+
+    if (viewer && typeof viewer.destroy === 'function') {
+      try { viewer.destroy(); } catch (err) {}
+      viewer = null;
     }
 
-    const preloaderImg = new Image();
+    viewer = pannellum.viewer('panorama', {
+      type: 'equirectangular',
+      panorama: panoramaUrl,
+      autoLoad: true,
+      autoRotate: -2,
+      showControls: false,
+      yaw: yaw,
+      pitch: pitch,
+      hfov: hfov,
+      minHfov: 30,
+      maxHfov: 120,
+      keyboardZoom: true,
+      mouseZoom: true
+    });
+    window.viewer = viewer;
 
-    preloaderImg.onload = () => {
-      if (viewer && typeof viewer.destroy === 'function') {
-        try { viewer.destroy(); } catch (err) {}
-        viewer = null;
-      }
-
-      viewer = pannellum.viewer('panorama', {
-        type: 'equirectangular',
-        panorama: panoramaUrl,
-        autoLoad: true,
-        autoRotate: 0,
-        showControls: false,
-        yaw: yaw,
-        pitch: pitch,
-        hfov: hfov,
-        minHfov: 30,
-        maxHfov: 120,
-        keyboardZoom: true,
-        mouseZoom: true,
-        draggable: true,
-        touchPan: true,
-        friction: 0.15
-      });
-      window.viewer = viewer;
-
-      viewer.on('load', () => {
-        isPanoramaLoaded = true;
-        if (loadingScreen) {
-          loadingScreen.classList.add('hidden');
-          loadingScreen.style.display = 'none';
-        }
-        enterExperience();
-      });
-
-      viewer.on('error', () => {
-        if (loadingScreen) {
-          loadingScreen.classList.add('hidden');
-          loadingScreen.style.display = 'none';
-        }
-        enterExperience();
-      });
-    };
-
-    preloaderImg.onerror = () => {
-      console.warn('Preloader image failed:', panoramaUrl);
-      if (loadingScreen) {
-        loadingScreen.classList.add('hidden');
-        loadingScreen.style.display = 'none';
-      }
+    viewer.on('load', () => {
+      isPanoramaLoaded = true;
+      if (loadingScreen) loadingScreen.classList.add('hidden');
       enterExperience();
-    };
+    });
 
-    preloaderImg.src = panoramaUrl;
+    viewer.on('error', () => {
+      if (loadingScreen) loadingScreen.classList.add('hidden');
+      enterExperience();
+    });
   }
 
   // Multi-Scene Pagination HUD Elements
@@ -261,8 +234,7 @@ function initApp() {
     renderScenePagination(entry, sceneIndex);
     initOrLoadPanorama(scene.panoramaUrl, scene.pitch || 0, scene.yaw || 0, scene.hfov || 100);
 
-    hubScreen.classList.add('hidden');
-    loadingScreen.classList.remove('hidden');
+    if (hubScreen) hubScreen.classList.add('hidden');
   }
 
   // --- Admin State & UI Synchronization ---
@@ -1103,7 +1075,9 @@ function initApp() {
   }
   function resetIdleTimer() {
     if (!experienceStarted) return;
-    showHUD();
+    if (hudOverlay && hudOverlay.classList.contains('hud-hidden')) {
+      showHUD();
+    }
     clearTimeout(idleTimer);
     idleTimer = setTimeout(hideHUD, idleTimeoutMs);
   }

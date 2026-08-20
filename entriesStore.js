@@ -267,9 +267,23 @@ export async function fetchRemoteEntries() {
     if (res.ok) {
       const remoteData = await res.json();
       if (Array.isArray(remoteData) && remoteData.length > 0) {
-        memoryEntriesCache = remoteData;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteData));
-        return remoteData;
+        // Merge remote entries with DEFAULT_ENTRIES so all 15 POIs are present
+        const remoteMap = new Map(remoteData.map(e => [e.id, e]));
+        DEFAULT_ENTRIES.forEach(def => {
+          if (!remoteMap.has(def.id)) {
+            remoteMap.set(def.id, def);
+          }
+        });
+        const mergedData = Array.from(remoteMap.values());
+        memoryEntriesCache = mergedData;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedData));
+
+        // Sync missing defaults back to backend in background if needed
+        if (mergedData.length > remoteData.length) {
+          saveAllEntries(mergedData);
+        }
+
+        return mergedData;
       }
     }
   } catch (err) {
